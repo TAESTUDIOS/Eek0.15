@@ -217,10 +217,12 @@ export default function ScheduleOverviewPage() {
 
   const triggerSelectedReminders = async (appointmentId: string) => {
     const posts: Array<Promise<Response>> = [];
-    if (r1h) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId, offsetMinutes: 60 }) }));
-    if (r30m) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId, offsetMinutes: 30 }) }));
-    if (r10m) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId, offsetMinutes: 10 }) }));
-    if (rAt) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ appointmentId, offsetMinutes: 0 }) }));
+    // Send full appointment data to avoid database lookup
+    const payload = { title: cTitle, date: cDate, start: cTime, appointmentId };
+    if (r1h) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, offsetMinutes: 60 }) }));
+    if (r30m) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, offsetMinutes: 30 }) }));
+    if (r10m) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, offsetMinutes: 10 }) }));
+    if (rAt) posts.push(fetch("/api/reminders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, offsetMinutes: 0 }) }));
     if (posts.length === 0) return;
     try {
       await Promise.allSettled(posts);

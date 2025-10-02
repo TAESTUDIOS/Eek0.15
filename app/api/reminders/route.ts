@@ -16,26 +16,40 @@ function neonAvailable() {
 
 async function resolveAppointment(input: any) {
   const { appointmentId, title, date, start } = input || {};
+  // If full appointment data provided, use it directly
   if (title && date && start) {
     return { title, date, start } as { title: string; date: string; start: string };
   }
   if (!appointmentId) return null;
+  
   // Try resolve by id from data store
   if (!neonAvailable()) {
-    const a = await getByIdJson(appointmentId);
-    if (!a) return null;
-    return { title: a.title, date: a.date, start: a.start };
+    try {
+      const a = await getByIdJson(appointmentId);
+      if (!a) return null;
+      return { title: a.title, date: a.date, start: a.start };
+    } catch (err) {
+      console.error("[reminders] Failed to resolve from JSON:", err);
+      return null;
+    }
   }
-  const sql = getDb();
-  const rows: any[] = await sql`
-    SELECT title, to_char(date, 'YYYY-MM-DD') AS date, to_char(start, 'HH24:MI') AS start
-    FROM appointments
-    WHERE id = ${appointmentId}
-    LIMIT 1
-  `;
-  const r = rows?.[0];
-  if (!r) return null;
-  return { title: r.title, date: r.date, start: r.start } as { title: string; date: string; start: string };
+  
+  // Resolve from database
+  try {
+    const sql = getDb();
+    const rows: any[] = await sql`
+      SELECT title, to_char(date, 'YYYY-MM-DD') AS date, to_char(start, 'HH24:MI') AS start
+      FROM appointments
+      WHERE id = ${appointmentId}
+      LIMIT 1
+    `;
+    const r = rows?.[0];
+    if (!r) return null;
+    return { title: r.title, date: r.date, start: r.start } as { title: string; date: string; start: string };
+  } catch (err) {
+    console.error("[reminders] Database query failed:", err);
+    throw err; // Re-throw to be caught by main handler
+  }
 }
 
 export async function POST(req: Request) {
