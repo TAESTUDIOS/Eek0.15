@@ -56,12 +56,16 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { offsetMinutes } = body || {};
+    
+    console.log("[reminders] Received request:", { offsetMinutes, hasTitle: !!body.title, hasDate: !!body.date, hasStart: !!body.start });
+    
     if (typeof offsetMinutes !== "number" || offsetMinutes < 0) {
       return NextResponse.json({ ok: false, error: "Invalid offsetMinutes" }, { status: 400 });
     }
 
     const appt = await resolveAppointment(body);
     if (!appt) {
+      console.error("[reminders] Failed to resolve appointment from body:", body);
       return NextResponse.json({ ok: false, error: "Missing appointment. Provide { title, date, start } or { appointmentId }." }, { status: 400 });
     }
 
@@ -83,10 +87,12 @@ export async function POST(req: Request) {
 
     const url = process.env.NOTIFY_WEBHOOK_URL;
     if (!url) {
-      // Dev mock
+      // Dev mock - no webhook configured
       console.log("[DEV MOCK] Reminder payload ->", payload);
       return NextResponse.json({ ok: true, mocked: true, payload });
     }
+
+    console.log("[reminders] Sending to webhook:", url);
 
     // Build headers with optional Authorization
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -114,14 +120,19 @@ export async function POST(req: Request) {
       body: JSON.stringify(payload),
     });
 
+    console.log("[reminders] Webhook response status:", res.status);
+
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      console.error("[reminders] Webhook error:", res.status, text);
       return NextResponse.json({ ok: false, error: `Webhook error: ${res.status} ${text}` }, { status: 502 });
     }
 
     const data = await res.json().catch(() => ({}));
+    console.log("[reminders] Success, webhook returned:", data);
     return NextResponse.json({ ok: true, forwarded: true, data });
   } catch (e: any) {
+    console.error("[reminders] Unexpected error:", e);
     return NextResponse.json({ ok: false, error: e?.message || "Failed to create reminder" }, { status: 500 });
   }
 }
