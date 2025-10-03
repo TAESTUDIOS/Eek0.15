@@ -96,15 +96,23 @@ export async function POST(req: Request) {
 
     // Build headers with optional Authorization
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    const basicUser = process.env.NOTIFY_WEBHOOK_BASIC_USER;
-    const basicPass = process.env.NOTIFY_WEBHOOK_BASIC_PASS;
+    
+    // Try NOTIFY_WEBHOOK credentials first, fallback to FALLBACK credentials
+    const basicUser = process.env.NOTIFY_WEBHOOK_BASIC_USER || process.env.FALLBACK_BASIC_USER;
+    const basicPass = process.env.NOTIFY_WEBHOOK_BASIC_PASS || process.env.FALLBACK_BASIC_PASS;
     const bearer = process.env.NOTIFY_WEBHOOK_BEARER;
+    
     if (basicUser && basicPass) {
       const token = Buffer.from(`${basicUser}:${basicPass}`).toString("base64");
       headers["Authorization"] = `Basic ${token}`;
+      console.log("[reminders] Using Basic Auth with user:", basicUser);
     } else if (bearer) {
       headers["Authorization"] = `Bearer ${bearer}`;
+      console.log("[reminders] Using Bearer token");
+    } else {
+      console.log("[reminders] No authentication configured");
     }
+    
     // Allow custom extra headers via JSON string, e.g. {"X-My-Key":"abc"}
     const extraHeadersRaw = process.env.NOTIFY_WEBHOOK_HEADERS;
     if (extraHeadersRaw) {
