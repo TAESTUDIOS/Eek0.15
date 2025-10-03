@@ -140,7 +140,7 @@
                 priority
               />
               <span className="text-sm font-medium text-[var(--fg)]/85">Eeko</span>
-              <span className="text-[10px] font-normal text-[var(--fg)]/35">v.03</span>
+              <span className="text-[10px] font-normal text-[var(--fg)]/35">v.22</span>
             </div>
             <div className="flex items-center gap-2">
               {/* Refresh chat button */}

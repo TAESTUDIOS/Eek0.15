@@ -19,6 +19,7 @@ import type {
   Density,
   UrgentTodo,
   TodayTask,
+  NoteItem,
 } from "@/lib/types";
 
 // Small dev mocks so UI isn't empty on first load
@@ -92,6 +93,8 @@ export type AppState = {
   // urgent todos (client-managed)
   urgentTodos: UrgentTodo[];
   todayTasks: TodayTask[];
+  // notes system
+  notes: NoteItem[];
   // settings helpers
   loadSettings: () => Promise<void>;
   saveSettings: () => Promise<boolean>;
@@ -135,6 +138,11 @@ export type AppState = {
   toggleTodayDone: (id: string) => void;
   deleteTodayTask: (id: string) => void;
   clearCompletedToday: () => void;
+  // notes helpers
+  loadNotes: () => Promise<void>;
+  addNote: (note: NoteItem) => Promise<void>;
+  updateNote: (id: string, patch: Partial<NoteItem>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
 };
 
 const urgentKey = "psa.urgentTodos";
@@ -199,6 +207,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   emotionLogs: [],
   urgentTodos: [],
   todayTasks: [],
+  notes: [],
   
   // Load settings from server (Neon). If endpoint fails, keep current defaults.
   loadSettings: async () => {
@@ -497,6 +506,52 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = get().todayTasks.filter((x) => !x.done);
     set({ todayTasks: next });
     writeTodayTasks(next);
+  },
+
+  // Notes CRUD operations
+  loadNotes: async () => {
+    try {
+      const res = await fetch("/api/notes", { cache: "no-store" });
+      const data = await res.json().catch(() => ({} as any));
+      if (data?.ok && Array.isArray(data.items)) {
+        set({ notes: data.items });
+      }
+    } catch {
+      // ignore load failure
+    }
+  },
+  addNote: async (note) => {
+    const optimistic = [...get().notes, note];
+    set({ notes: optimistic });
+    try {
+      await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(note),
+      });
+      await get().loadNotes();
+    } catch {}
+  },
+  updateNote: async (id, patch) => {
+    const cur = get().notes.find((x) => x.id === id);
+    if (!cur) return;
+    const updated = { ...cur, ...patch, updatedAt: Date.now() };
+    const next = get().notes.map((x) => (x.id === id ? updated : x));
+    set({ notes: next });
+    try {
+      await fetch("/api/notes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+    } catch {}
+  },
+  deleteNote: async (id) => {
+    const next = get().notes.filter((x) => x.id !== id);
+    set({ notes: next });
+    try {
+      await fetch(`/api/notes?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch {}
   },
 }));
 

@@ -19,6 +19,7 @@ const links = [
   { href: "/chat", label: "Chat" },
   { href: "/schedule", label: "Schedule" },
   { href: "/urgent", label: "Urgent" },
+  { href: "/notes", label: "Notes" },
   { href: "/emotions", label: "Emotions" },
   { href: "/saved", label: "Saved" },
   { href: "/winddown", label: "Winddown" },
@@ -91,6 +92,7 @@ export default function Sidebar({ variant = "side" }: Props) {
                   "/chat",
                   "/schedule",
                   "/urgent",
+                  "/notes",
                 ].map((href) => {
                   const l = links.find((x) => x.href === href);
                   if (!l) return null;
@@ -158,6 +160,7 @@ export default function Sidebar({ variant = "side" }: Props) {
             "/chat",
             "/schedule",
             "/urgent",
+            "/notes",
           ].map((href) => {
             const l = links.find((x) => x.href === href);
             if (!l) return null;
@@ -193,7 +196,7 @@ export default function Sidebar({ variant = "side" }: Props) {
           {/* Remaining links after grouped menus */}
           {links
             .filter((l) => {
-              const primary = ["/chat", "/schedule", "/urgent"];
+              const primary = ["/chat", "/schedule", "/urgent", "/notes"];
               const logsItems = [
                 "/emotions",
                 "/saved",

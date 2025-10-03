@@ -133,3 +133,16 @@ export interface TodayTask {
   createdAt: number;
   updatedAt: number;
 }
+
+// Notes system types
+export type NoteItemType = "note" | "folder";
+
+export interface NoteItem {
+  id: string;
+  type: NoteItemType;
+  name: string;
+  parentId: string | null; // null for root items
+  content?: string; // only for notes
+  createdAt: number;
+  updatedAt: number;
+}
