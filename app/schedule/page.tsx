@@ -257,11 +257,16 @@ export default function ScheduleOverviewPage() {
       const savedItem = (data?.item as Appointment | undefined) ?? undefined;
       const apptId = savedItem?.id ?? editingId ?? null;
       await loadAppointments(selectedDate);
-      // Fire reminders after save if selected
-      if (apptId) {
-        await triggerSelectedReminders(apptId);
-      }
+      
+      // Close composer immediately - don't wait for reminders
       setShowComposer(false);
+      
+      // Fire reminders in background (non-blocking)
+      if (apptId) {
+        triggerSelectedReminders(apptId).catch((err) => {
+          console.error("Failed to trigger reminders:", err);
+        });
+      }
     } catch {
       // TODO: could toast an error here
     } finally {
